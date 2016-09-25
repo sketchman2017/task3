@@ -1,0 +1,358 @@
+<!doctype html>
+
+<html lang=en>
+
+<head>
+    <meta charset=utf-8>
+    <title>Inheritance in JS. Создание наследника объекта.</title>
+</head>
+
+<body>
+
+<script>
+
+function print(obj) {
+    for (var key in obj) {
+        console.log("Свойство: " + key + ". Значение: " + obj[key]);
+    }
+}
+
+console.log("Создание объекта, наследующего прототип (cпособ 1).");
+
+// Объект o1 наследует свойства x и y
+
+var o1 = Object.create({x: 1, y: 2});
+console.log("o1: ");
+print(o1);
+
+// Объект o2 не наследует ни свойств, ни методов,
+// даже базового метода toString. При выводе в консоль выдается ошибка
+// о невозможности конвертации в примитивный тип
+
+var o2 = Object.create(null);
+
+// Пустой объект, аналогичный созданному через {} или new Object()
+
+var o3 = Object.create(Object.prototype);
+console.log("\no3 унаследован от Object.prototype (пусто): ");
+print(o3);
+
+
+console.log("\nСоздание объекта, наследующего прототип (cпособ 2). Наследование свойств объектов.");
+
+// Функция inherit() возвращает объект, наследующий
+// свойства прототипа p. В нем используется
+// введенная в ECMAScript 5 функция Object.create(),
+// если она определена. В противном случае применяется
+// устаревшая методика
+
+function inherit(p) {
+    // Объект p не должен быть равен null
+
+    if (p == null) {
+        throw TypeError();
+    }
+
+    // Вызов Object.create()
+
+    if (Object.create) {
+        return Object.create(p);
+    }
+
+    // p должен быть объектом
+
+    var t = typeof p;
+    if (t !== "object" && t!=="function") { 
+        throw TypeError();
+    }
+
+    // Определим конструктор
+    function f() {}
+
+    // Установка свойства prototype
+    f.prototype = p;
+
+    // Создание наследника p
+    return new f();
+}
+
+// Объект o наследует методы из Object.prototype
+var o = {};
+
+// Объект имеет собственное свойство x
+o.x = 1;
+console.log("\nОбъект o имеет собственное свойство x: ");
+print(o);
+
+var p = inherit(o);
+console.log("\nОбъект p наследует o из Object.prototype, p = inherit(o): ");
+print(p);
+
+p.y = 2;
+console.log("\np имеет собственное свойство y, p.y = 2: ");
+print(p);
+
+var q = inherit(p);
+console.log("\nq наследует свойства из p, o и Object.prototype, q = inherit(p): ");
+print(q);
+
+// q имеет собственное свойство z
+q.z = 3;
+console.log("\nq имеет собственное свойство z, q.z = 3: ");
+print(q);
+
+console.log("\nМетод toString унаследован объектом q от Object.prototype: ");
+console.log(q);
+
+// x и y унаследованы объектом q от o и p
+var sum = q.x + q.y;
+console.log("\nСвойства x и y унаследованы объектом sum от o и p, sum = q.x + q.y: ");
+console.log(sum);
+
+// -- Удаление свойств --
+
+delete o.x;
+console.log("\nЧтобы удалить унаследованное свойство x объекта sum, его нужно удалить в прототипе o, delete o.x: (в sum пусто)");
+print(sum);
+
+
+// -- Проверка свойств
+
+console.log("\nОператор in возвращает True, если у объекта есть собственное или унаследованное свойство с введенным именем, r = { x: 1 }");
+
+var r = { x: 1 };
+
+var expr = "x" in r;
+console.log("\"x\" in r ===", expr);
+
+expr = "y" in r;
+console.log("\"y\" in r ===", expr);
+
+expr = "toString" in r;
+console.log("\"toString\" in r ===", expr);
+
+o = { x: 1 };
+console.log("\nСобственный метод hasOwnProperty() объекта возвращает true, если объект имеет собственное свойство с заданным именем, o = { x: 1 }:");
+
+expr = o.hasOwnProperty("x");
+console.log("o.hasOwnProperty(\"x\") ===", expr);
+
+expr = o.hasOwnProperty("y");
+console.log("o.hasOwnProperty(\"y\") ===", expr);
+
+expr = o.hasOwnProperty("toString");
+console.log("o.hasOwnProperty(\"toString\") ===", expr);
+
+
+// -- Атрибуты объекта
+
+// prototype
+
+p = { x: 1 };
+o = Object.create(p);
+console.log("\nЯвляется ли объект прототипом или элементом цепочки прототипов другого объекта, p = { x: 1 }; o = Object.create(p);");
+
+expr = p.isPrototypeOf(o);
+console.log("p.isPrototypeOf(o) ===", expr);
+
+expr = Object.prototype.isPrototypeOf(p);
+console.log("Для любого объекта Object.prototype.isPrototypeOf(o) ===", expr);
+
+// class
+
+function classof(o) {
+    if (o === null) {
+        return "Null";
+    }
+    if (o === undefined) {
+        return "Undefined";
+    }
+    return Object.prototype.toString.call(o).slice(8, -1);
+}
+console.log("\nАтриут класса содержит строку с информацией о типе объекта. Ее можно получить через метод toString() (см. код), a = new Array();");
+var a = new Array();
+var c = classof(a);
+console.log("classof(a) ===", c);
+
+// extensible
+
+var d = new Date();
+console.log("\nРасширяемость объекта (возможность добавить новое свойство), влияет только на объект, не на прототипы d = new Date();");
+
+expr = Object.isExtensible(d);
+console.log("Object.isExtensible(d) ===", expr);
+
+Object.preventExtensions(d);
+console.log("Object.preventExtensions(d); // необратимо");
+expr = Object.isExtensible(d);
+
+console.log("Object.isExtensible(d) ===", expr);
+
+// isSealed() (конфигурируемость)
+
+var e = new RegExp("JS");
+console.log("\nКонфигурируемость, т.е. если свойство false, его нельзя удалить/изменить, операция необратима, не влияет на прототипы, e = new RegExp('JS');");
+
+expr = Object.isSealed(e);
+console.log("Object.isSealed(e) ===", expr);
+
+Object.seal(e);
+console.log("Object.seal();");
+expr = Object.isSealed(e);
+console.log("Object.isSealed(e) ===", expr);
+
+// isFrozen() (замораживание)
+
+e = new Array();
+console.log("\nЗамораживание это нерасширяемость, неконфигурируемость свойств, переключение всех собственных свойств без методов доступа в режим 'только чтение'. Не влияет на прототипы, e = new Array();");
+expr = Object.isFrozen(e);
+console.log("Object.isFrozen(e) ===", expr);
+
+Object.freeze(e);
+console.log("Object.freeze(e);");
+expr = Object.isFrozen(e);
+console.log("Object.isFrozen(e) ===", expr);
+
+
+// -- Классы
+
+console.log("\nКлассы. Если два объекта наследуют свойства одного и того же прототипа, то они - экземпляры одного класса.");
+
+
+console.log("\nrange() - класс, представляющий диапазон; range.methods - его прототип (см. код).");
+
+
+// Функция, возвращающая диапазон
+function range(from, to) {
+
+    // Использование функции Object.create() для создания объекта,
+    // наследующего прототип.
+    // Прототип хранится как свойство данной функциии,
+    // и в нем определены общие методы объектов класса.
+
+    var r = Object.create(range.methods);
+
+    // Сохранение начальной и конечной точек диапазона.
+    // Они являются ненаследуемыми свойствами, уникальны для объекта.
+
+    r.from = from;
+    r.to = to;
+
+    // Возвращение нового объекта
+
+    return r;
+}
+
+// Объект прототипа определяет методы,
+// наследуемые всеми объектами range.
+
+range.methods = {
+
+    // Возвращает true, если x попадает в диапазон
+
+    includes: function(x) {
+        return this.from <= x && x <= this.to;
+    },
+
+    // Вызов f() по одному разу для каждого числа. Метод работает только с числовыми диапазонами.
+
+    foreach: function(f) {
+        for (x=Math.ceil(this.from); x <= this.to; x++) {
+            f(x);
+        }
+    },
+
+    // Возврат строки, представляющей диапазон
+
+    toString: function() {
+        return "(" + this.from + "..." + this.to + ")";
+    }
+};
+
+
+r = range(1, 5);
+console.log("\nПример использования объекта диапазона, r = range(1, 5);");
+
+expr = r.includes(2);
+console.log("\n2 попадает в диапазон, r.includes(2) === ", expr);
+
+expr = r.includes(6);
+console.log("\n6 не попадает в диапазон, r.includes(6) === ", expr);
+
+console.log("\nВывод 1, 2, 3, 4, 5; r.foreeach(console.log);");
+expr = r.foreach(console.log);
+
+console.log("Вывод (1...5), r.toString() ===", r.toString());
+
+
+// -- Класс, возвращающий диапазон №2
+
+console.log("Range() - класс, предсталяющий диапазон. Range.prototype - его прототип.");
+
+// Функция конструктора, только инициализирующего объект Range.
+// Он не создает, не возвращает значение, только инициализирует.
+
+function Range(from, to) {
+
+    // Сохранение начальной и конечной точек диапазона.
+    // Они являются ненаследуемыми свойствами, уникальны для объекта.
+
+    this.from = from;
+    this.to = to;
+}
+
+// Все объекты Range наследуют этот объект.
+// Имя свойства должно быть prototype.
+
+Range.prototype = {
+
+    // Возвращает true, если x попадает в диапазон
+
+    includes: function(x) {
+        return this.from <= x && x <= this.to;
+    },
+
+    // Вызов f() по одному разу для каждого целого числа в диапазоне.
+
+    foreach: function(f) {
+        for (x=Math.ceil(this.from); x <= this.to; x+=1) {
+            f(x);
+        }
+    },
+
+    // Возврат строки, представляющей диапазон
+
+    toString: function() {
+        return "(" + this.from + "..." + this.to + ")";
+    }
+};
+
+
+var t = new Range(1, 4);
+console.log("\nПример использования объекта диапазона, t = Range(1, 4);");
+
+expr = t.includes(3);
+console.log("\n3 попадает в диапазон, t.includes(3) === ", expr);
+
+expr = t.includes(7);
+console.log("\n7 не попадает в диапазон, t.includes(7) === ", expr);
+
+console.log("\nВывод 1, 2, 3, 4; t.foreeach(console.log);");
+t.foreach(console.log);
+
+console.log("\nВывод (1...4), t.toString() ===", t.toString());
+
+
+// Свойство constructor
+
+console.log("\nЛюбая функция JavaScript - конструктор и имеет свойство prototype. " +
+            "Его значение - объект с одним свойством - constructor. Его значение - объект функции.");
+
+var F = function() {};
+p = F.prototype.constructor;
+expr = (p === F);
+
+console.log("F = function() {}; p = F.prototype.constructor; (p === F) ===", expr);</script>
+</body>
+
+</html>
